@@ -1,0 +1,70 @@
+
+name: Preparar e compilar CompriFy
+
+on:
+  push:
+    paths:
+      - 'comprify-source.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extrair código-fonte preparado
+        run: |
+          test -f comprify-source.zip || (echo "comprify-source.zip não encontrado" && exit 1)
+          mkdir -p /tmp/comprify-source
+          unzip -q comprify-source.zip -d /tmp/comprify-source
+          rsync -a /tmp/comprify-source/ ./
+          rm comprify-source.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Preparar código-fonte do CompriFy"
+            git push origin HEAD:main
+          fi
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Restaurar chave de assinatura de teste
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: comprify-debug-keystore-v1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Executar testes e compilar APK
+        run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Disponibilizar APK de teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: CompriFy-APK-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+          
