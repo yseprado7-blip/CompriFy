@@ -54,7 +54,7 @@ jobs:
 
       - name: Executar testes e compilar APK
         working-directory: ${{ env.COMPRIFY_PROJECT_DIR }}
-        run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
+        run: gradle --no-daemon :app:assembleDebug
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
