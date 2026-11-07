@@ -30,7 +30,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "Preparar código-fonte do CompriFy"
+            git commit -m "Preparar código-fonte do CompriFy [skip ci]"
             git push origin HEAD:main
           fi
 
