@@ -42,8 +42,10 @@ jobs:
 
       - name: Configurar Android SDK
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0" 
+  
 
       - name: Instalar Gradle
         uses: gradle/actions/setup-gradle@v4
