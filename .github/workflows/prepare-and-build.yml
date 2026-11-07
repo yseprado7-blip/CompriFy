@@ -15,16 +15,21 @@ jobs:
   prepare-and-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar repositório
+      - name: Baixar repositorio
         uses: actions/checkout@v4
 
       - name: Extrair projeto Android
         run: |
           mkdir -p "$RUNNER_TEMP/comprify-source"
           unzip -q comprify-source.zip -d "$RUNNER_TEMP/comprify-source"
-          PROJECT_DIR="$(dirname "$(find "$RUNNER_TEMP/comprify-source" -name settings.gradle.kts -print -quit)")"
-          if [ -z "$PROJECT_DIR" ] || [ ! -f "$PROJECT_DIR/app/build.gradle.kts" ]; then
-            echo "Estrutura do projeto Android não encontrada"
+          SETTINGS_FILE="$(find "$RUNNER_TEMP/comprify-source" -name settings.gradle.kts -print -quit)"
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "Arquivo settings.gradle.kts nao encontrado"
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$SETTINGS_FILE")"
+          if [ ! -f "$PROJECT_DIR/app/build.gradle.kts" ]; then
+            echo "Modulo app nao encontrado"
             exit 1
           fi
           echo "COMPRIFY_PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
@@ -36,15 +41,14 @@ jobs:
           java-version: '17'
 
       - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Instalar Gradle 9.3.1
+      - name: Instalar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
-
-      - name: Instalar plataforma Android 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Executar testes e compilar APK
         working-directory: ${{ env.COMPRIFY_PROJECT_DIR }}
@@ -57,3 +61,4 @@ jobs:
           path: ${{ env.COMPRIFY_PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+          
